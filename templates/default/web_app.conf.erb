@@ -1,0 +1,39 @@
+<VirtualHost *:80>
+  ServerAdmin     <%= node['apache']['contact'] %>
+  ServerName      <%= @params[:appliance_attributes]['apache2_proxy']['domain'] %>
+  DocumentRoot    /var/www
+  CustomLog       /var/log/apache2/<%= @application_name %>_access.log combined
+  ErrorLog        /var/log/apache2/<%= @application_name %>_error.log
+
+<% if !!@params[:appliance_attributes]['apache2_proxy']['ssl_key_path'] -%>
+  RewriteEngine on
+  RewriteRule ^/?(.*)$ https://<%= @params[:appliance_attributes]['apache2_proxy']['domain'] %>/$1 [L,R=301]
+</VirtualHost>
+
+<VirtualHost *:443>
+  ServerAdmin     <%= node['apache']['contact'] %>
+  ServerName      <%= @params[:appliance_attributes]['apache2_proxy']['domain'] %>
+  DocumentRoot    /var/www
+  CustomLog       /var/log/apache2/<%= @application_name %>_access.log combined
+  ErrorLog        /var/log/apache2/<%= @application_name %>_error.log
+
+  SSLEngine on
+  SSLCertificateFile <%= @params[:appliance_attributes]['apache2_proxy']['ssl_cert_path'] %>
+  SSLCertificateKeyFile <%= @params[:appliance_attributes]['apache2_proxy']['ssl_key_path'] %>
+
+<% end -%>
+
+<% if @params[:appliance_attributes]['apache2_proxy']['custom_config'] -%>
+  <%= @params[:appliance_attributes]['apache2_proxy']['custom_config'] %>
+<% end -%>
+
+<% container_port = JsonPath.on(Docker::Container[@params[:container_name]].json, '$.NetworkSettings.Ports..HostPort').first -%>
+   <Proxy http://localhost:<%= container_port %>/*>
+     Order deny,allow
+     Allow from all
+   </Proxy>
+
+   ProxyPreserveHost on
+   ProxyPass /  http://localhost:<%= container_port %>/
+   ProxyPassReverse /  http://localhost:<%= container_port %>/
+</VirtualHost>
