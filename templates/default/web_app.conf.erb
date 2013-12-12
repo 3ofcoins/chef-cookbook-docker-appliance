@@ -19,7 +19,9 @@
 
   SSLEngine on
   SSLCertificateFile <%= @params[:appliance_attributes]['apache2_proxy']['ssl_cert_path'] %>
-  SSLCertificateKeyFile <%= @params[:appliance_attributes]['apache2_proxy']['ssl_key_path'] %>
+<%   if @params[:appliance_attributes]['apache2_proxy']['ssl_cert_chain_path'] -%>
+  SSLCertificateChainFile <%= @params[:appliance_attributes]['apache2_proxy']['ssl_cert_chain_path'] %>
+<%   end -%>  SSLCertificateKeyFile <%= @params[:appliance_attributes]['apache2_proxy']['ssl_key_path'] %>
 
 <% end -%>
 
