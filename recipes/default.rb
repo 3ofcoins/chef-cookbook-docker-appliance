@@ -73,14 +73,16 @@ node['docker_appliance'].to_hash.each do |name, attr|
 
   docker_container name do
     image attr['image']
-    command attr['command'] if command
     detach true
     hostname name
     container_name name
-    publish_exposed_ports attr['publish_exposed_ports'] if attr['publish_exposed_ports'] != nil
-    port attr['port'] if attr['port']
     env attr['env'].reject { |k,v| v == nil }.map { |k,v| "#{k}=#{v.to_s.gsub('@HOST_IP@', node['docker']['bridge_ip'])}" }.sort unless attr['env'].empty?
     link attr['link'].map { |k,v| "#{v}:#{k}" }.sort.join(',') if attr['link']
+    %w[ command cpu_shares dns entrypoint expose lxc_conf memory port privileged
+        publish_exposed_ports remove_automatically stdin tty user volume
+        volumes_from working_directory].each do |prop|
+      self.send(prop.to_sym, attr[prop]) if attr.include?(prop)
+    end
   end
 
   if attr['apache2_proxy']
